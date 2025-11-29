@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voicenotea</string>
+    <string name="recording">Recording…</string>
+    <string name="start_recording">Start Recording</string>
+    <string name="stop_recording">Stop Recording</string>
+    <string name="transcribing">Transcribing…</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="edit_memo">Edit Memo</string>
+    <string name="memo_list">Memos</string>
+    <string name="title">Title</string>
+    <string name="body">Body</string>
+    <string name="no_memos">No memos yet. Start by recording!</string>
+    <string name="permission_denied">Microphone permission denied</string>
+    <string name="recording_failed">Recording failed</string>
+    <string name="transcription_failed">Transcription failed</string>
+</resources>

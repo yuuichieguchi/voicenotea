@@ -1,0 +1,21 @@
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Android Studio generated files
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# The .DS_Store file
+.DS_Store
+
+# Signing files
+.signing/
+*.jks
+*.keystore
