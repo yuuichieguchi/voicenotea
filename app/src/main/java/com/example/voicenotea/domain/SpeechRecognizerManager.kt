@@ -115,14 +115,14 @@ class SpeechRecognizerManager(
         _isListening.value = false
         val errorMessage = when (error) {
             SpeechRecognizer.ERROR_AUDIO -> "音声入力エラー"
-            SpeechRecognizer.ERROR_CLIENT -> "クライアントエラー（Google Play Servicesが必要な可能性があります）"
+            SpeechRecognizer.ERROR_CLIENT -> "音声認識に失敗しました"
             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "マイク許可が必要です"
             SpeechRecognizer.ERROR_NETWORK -> "ネットワークエラー"
             SpeechRecognizer.ERROR_NO_MATCH -> "音声が認識されませんでした"
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "音声がありません"
             SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "ネットワークタイムアウト"
             SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "音声認識エンジンが利用できません"
-            else -> "エラーが発生しました（コード: $error）"
+            else -> "エラーが発生しました"
         }
         Log.e(TAG, "Speech recognizer error: $error - $errorMessage")
         _error.value = errorMessage
