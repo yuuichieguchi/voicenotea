@@ -57,6 +57,9 @@ class MemoListViewModel(context: Context) : ViewModel() {
     private val _isSelectionMode = MutableStateFlow(false)
     val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
 
+    private val _successMessage = MutableStateFlow<String?>(null)
+    val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
+
     fun startListening() {
         Log.d(TAG, "startListening called")
         _recordingState.value = RecordingState.Listening
@@ -99,7 +102,7 @@ class MemoListViewModel(context: Context) : ViewModel() {
         Log.d(TAG, "Saving memo from transcript: $transcript")
         viewModelScope.launch {
             try {
-                val title = transcript.take(50).takeIf { it.isNotBlank() } ?: "Untitled Memo"
+                val title = transcript.take(20).takeIf { it.isNotBlank() } ?: "Untitled Memo"
                 val memo = Memo(
                     title = title,
                     body = transcript,
@@ -136,6 +139,7 @@ class MemoListViewModel(context: Context) : ViewModel() {
     fun clearSelection() {
         _selectedMemoIds.value = emptySet()
         _isSelectionMode.value = false
+        _successMessage.value = null
     }
 
     fun deleteSelectedMemos() {
@@ -148,6 +152,7 @@ class MemoListViewModel(context: Context) : ViewModel() {
                     repository.deleteMemoById(memoId)
                 }
                 Log.d(TAG, "Successfully deleted ${selectedIds.size} memos")
+                _successMessage.value = "${selectedIds.size}件のメモを削除しました"
                 clearSelection()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete memos: ${e.message}")

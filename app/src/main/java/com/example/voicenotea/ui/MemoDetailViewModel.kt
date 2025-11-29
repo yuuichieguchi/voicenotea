@@ -99,6 +99,7 @@ class MemoDetailViewModel(context: Context) : ViewModel() {
                 _memo.value = null
                 _title.value = ""
                 _body.value = ""
+                _successMessage.value = "メモを削除しました"
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to delete memo: ${e.message}"
             }

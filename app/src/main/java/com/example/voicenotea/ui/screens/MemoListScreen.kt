@@ -66,11 +66,18 @@ fun MemoListScreen(
     val recognizedText = viewModel.recognizedText.collectAsState()
     val isSelectionMode = viewModel.isSelectionMode.collectAsState()
     val selectedMemoIds = viewModel.selectedMemoIds.collectAsState()
+    val successMessage = viewModel.successMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val showDeleteConfirmDialog = remember { mutableStateOf(false) }
 
     LaunchedEffect(error.value) {
         error.value?.let { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    LaunchedEffect(successMessage.value) {
+        successMessage.value?.let { message ->
             snackbarHostState.showSnackbar(message)
         }
     }
