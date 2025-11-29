@@ -1,6 +1,9 @@
 package com.example.voicenotea.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,12 +18,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -30,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +64,10 @@ fun MemoListScreen(
     val isListening = viewModel.isListening.collectAsState()
     val error = viewModel.error.collectAsState()
     val recognizedText = viewModel.recognizedText.collectAsState()
+    val isSelectionMode = viewModel.isSelectionMode.collectAsState()
+    val selectedMemoIds = viewModel.selectedMemoIds.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val showDeleteConfirmDialog = remember { mutableStateOf(false) }
 
     LaunchedEffect(error.value) {
         error.value?.let { message ->
@@ -65,18 +77,37 @@ fun MemoListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.app_name)) })
+            if (isSelectionMode.value) {
+                TopAppBar(
+                    title = { Text("${selectedMemoIds.value.size}件選択中") },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.clearSelection() }) {
+                            Icon(Icons.Default.Close, contentDescription = "キャンセル")
+                        }
+                    }
+                )
+            } else {
+                TopAppBar(title = { Text(stringResource(R.string.app_name)) })
+            }
         },
         floatingActionButton = {
-            when (recordingState.value) {
-                RecordingState.Idle -> {
+            when {
+                isSelectionMode.value -> {
+                    FloatingActionButton(
+                        onClick = { showDeleteConfirmDialog.value = true },
+                        containerColor = MaterialTheme.colorScheme.error
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "選択削除")
+                    }
+                }
+                recordingState.value == RecordingState.Idle -> {
                     FloatingActionButton(
                         onClick = { viewModel.startListening() }
                     ) {
                         Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.start_recording))
                     }
                 }
-                RecordingState.Listening -> {
+                recordingState.value == RecordingState.Listening -> {
                     FloatingActionButton(
                         onClick = { viewModel.stopListening() },
                         containerColor = MaterialTheme.colorScheme.error
@@ -122,23 +153,73 @@ fun MemoListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(memoList) { memo ->
-                        MemoItemRow(memo, onMemoSelected)
+                        MemoItemRow(
+                            memo = memo,
+                            onMemoSelected = onMemoSelected,
+                            isSelected = selectedMemoIds.value.contains(memo.id),
+                            isSelectionMode = isSelectionMode.value,
+                            onLongPress = { viewModel.toggleMemoSelection(memo.id) },
+                            onToggleSelection = { viewModel.toggleMemoSelection(memo.id) }
+                        )
                     }
                 }
             }
         }
     }
+
+    if (showDeleteConfirmDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog.value = false },
+            title = { Text("${selectedMemoIds.value.size}件のメモを削除しますか？") },
+            text = { Text("この操作は取り消せません。") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteSelectedMemos()
+                        showDeleteConfirmDialog.value = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("削除")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteConfirmDialog.value = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MemoItemRow(
     memo: Memo,
-    onMemoSelected: (Long) -> Unit
+    onMemoSelected: (Long) -> Unit,
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
+    onLongPress: () -> Unit,
+    onToggleSelection: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onMemoSelected(memo.id) },
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+            )
+            .combinedClickable(
+                onClick = {
+                    if (isSelectionMode) {
+                        onToggleSelection()
+                    } else {
+                        onMemoSelected(memo.id)
+                    }
+                },
+                onLongClick = onLongPress
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )

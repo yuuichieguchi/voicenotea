@@ -51,6 +51,12 @@ class MemoListViewModel(context: Context) : ViewModel() {
     val isListening = speechRecognizerManager.isListening
     val error = speechRecognizerManager.error
 
+    private val _selectedMemoIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedMemoIds: StateFlow<Set<Long>> = _selectedMemoIds.asStateFlow()
+
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
+
     fun startListening() {
         Log.d(TAG, "startListening called")
         _recordingState.value = RecordingState.Listening
@@ -106,6 +112,45 @@ class MemoListViewModel(context: Context) : ViewModel() {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to save memo: ${e.message}")
                 _recordingState.value = RecordingState.Idle
+            }
+        }
+    }
+
+    fun toggleMemoSelection(memoId: Long) {
+        val currentSelection = _selectedMemoIds.value.toMutableSet()
+        if (currentSelection.contains(memoId)) {
+            currentSelection.remove(memoId)
+        } else {
+            currentSelection.add(memoId)
+        }
+        _selectedMemoIds.value = currentSelection
+
+        // セレクションモードの終了判定
+        if (currentSelection.isEmpty()) {
+            _isSelectionMode.value = false
+        } else if (currentSelection.isNotEmpty()) {
+            _isSelectionMode.value = true
+        }
+    }
+
+    fun clearSelection() {
+        _selectedMemoIds.value = emptySet()
+        _isSelectionMode.value = false
+    }
+
+    fun deleteSelectedMemos() {
+        val selectedIds = _selectedMemoIds.value
+        if (selectedIds.isEmpty()) return
+
+        viewModelScope.launch {
+            try {
+                for (memoId in selectedIds) {
+                    repository.deleteMemoById(memoId)
+                }
+                Log.d(TAG, "Successfully deleted ${selectedIds.size} memos")
+                clearSelection()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete memos: ${e.message}")
             }
         }
     }
