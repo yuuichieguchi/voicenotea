@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +28,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -52,6 +54,7 @@ fun MemoDetailScreen(
     val errorMessage = viewModel.errorMessage.collectAsState()
     val successMessage = viewModel.successMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val showDeleteConfirmDialog = remember { mutableStateOf(false) }
 
     LaunchedEffect(successMessage.value) {
         successMessage.value?.let { message ->
@@ -144,7 +147,7 @@ fun MemoDetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Button(
-                        onClick = { viewModel.deleteMemo() },
+                        onClick = { showDeleteConfirmDialog.value = true },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error
                         ),
@@ -167,5 +170,31 @@ fun MemoDetailScreen(
                 Text("Loading memo...")
             }
         }
+    }
+
+    if (showDeleteConfirmDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog.value = false },
+            title = { Text("メモを削除しますか？") },
+            text = { Text("このメモを削除します。この操作は取り消せません。") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteMemo()
+                        showDeleteConfirmDialog.value = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("削除")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteConfirmDialog.value = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
     }
 }
