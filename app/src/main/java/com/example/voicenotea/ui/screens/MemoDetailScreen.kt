@@ -71,8 +71,9 @@ fun MemoDetailScreen(
     }
 
     LaunchedEffect(memo.value?.id) {
-        // Trigger navigation back after successful delete
+        // トースト表示後に遅延してナビゲーション
         if (memo.value == null && memoId != 0L) {
+            kotlinx.coroutines.delay(1500)
             onNavigateBack()
         }
     }

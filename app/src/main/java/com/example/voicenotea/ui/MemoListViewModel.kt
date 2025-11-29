@@ -142,6 +142,11 @@ class MemoListViewModel(context: Context) : ViewModel() {
         _successMessage.value = null
     }
 
+    private fun clearSelectionWithoutMessage() {
+        _selectedMemoIds.value = emptySet()
+        _isSelectionMode.value = false
+    }
+
     fun deleteSelectedMemos() {
         val selectedIds = _selectedMemoIds.value
         if (selectedIds.isEmpty()) return
@@ -153,7 +158,9 @@ class MemoListViewModel(context: Context) : ViewModel() {
                 }
                 Log.d(TAG, "Successfully deleted ${selectedIds.size} memos")
                 _successMessage.value = "${selectedIds.size}件のメモを削除しました"
-                clearSelection()
+                // トースト表示後に選択状態をクリア
+                kotlinx.coroutines.delay(1500)
+                clearSelectionWithoutMessage()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete memos: ${e.message}")
             }

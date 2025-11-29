@@ -56,6 +56,8 @@ class SpeechRecognizerManager(
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_PROMPT, "話してください…")
+            // 無音検出で自動終了しないよう、タイムアウト時間を長く設定
+            putExtra("android.speech.extra.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", 10000)
         }
 
         try {
