@@ -50,7 +50,15 @@ fun MemoDetailScreen(
     val body = viewModel.body.collectAsState()
     val isSaving = viewModel.isSaving.collectAsState()
     val errorMessage = viewModel.errorMessage.collectAsState()
+    val successMessage = viewModel.successMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(successMessage.value) {
+        successMessage.value?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSuccess()
+        }
+    }
 
     LaunchedEffect(errorMessage.value) {
         errorMessage.value?.let { message ->

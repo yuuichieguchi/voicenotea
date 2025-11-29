@@ -41,6 +41,9 @@ class MemoDetailViewModel(context: Context) : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val _successMessage = MutableStateFlow<String?>(null)
+    val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
+
     fun loadMemo(memoId: Long) {
         viewModelScope.launch {
             try {
@@ -80,6 +83,7 @@ class MemoDetailViewModel(context: Context) : ViewModel() {
                 repository.updateMemo(updatedMemo)
                 _memo.value = updatedMemo
                 _isSaving.value = false
+                _successMessage.value = "メモを保存しました"
             } catch (e: Exception) {
                 _isSaving.value = false
                 _errorMessage.value = "Failed to save memo: ${e.message}"
@@ -103,5 +107,9 @@ class MemoDetailViewModel(context: Context) : ViewModel() {
 
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    fun clearSuccess() {
+        _successMessage.value = null
     }
 }
