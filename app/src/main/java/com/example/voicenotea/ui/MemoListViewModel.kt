@@ -3,6 +3,7 @@ package com.example.voicenotea.ui
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.voicenotea.data.Memo
 import com.example.voicenotea.data.MemoDatabase
@@ -19,6 +20,16 @@ private const val TAG = "MemoListViewModel"
 sealed class RecordingState {
     object Idle : RecordingState()
     object Listening : RecordingState()
+}
+
+class MemoListViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(MemoListViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return MemoListViewModel(context) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }
 
 class MemoListViewModel(context: Context) : ViewModel() {

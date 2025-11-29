@@ -2,6 +2,7 @@ package com.example.voicenotea.ui
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.voicenotea.data.Memo
 import com.example.voicenotea.data.MemoDatabase
@@ -10,6 +11,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+class MemoDetailViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(MemoDetailViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return MemoDetailViewModel(context) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
 
 class MemoDetailViewModel(context: Context) : ViewModel() {
     private val database = MemoDatabase.getDatabase(context)
@@ -81,6 +92,9 @@ class MemoDetailViewModel(context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 repository.deleteMemoById(currentMemo.id)
+                _memo.value = null
+                _title.value = ""
+                _body.value = ""
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to delete memo: ${e.message}"
             }
