@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.voicenotea"
-    compileSdk = 34
+    namespace = "jp.voicenotea.app"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.voicenotea"
+        applicationId = "jp.voicenotea.app"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
 

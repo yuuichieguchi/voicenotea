@@ -53,7 +53,7 @@ app/src/main/res/xml/data_extraction_rules.xml
 SOURCE CODE - DATA LAYER (4 files)
 ================================================================================
 
-app/src/main/java/com/example/voicenotea/data/
+app/src/main/java/jp/voicenotea/app/data/
 
   Memo.kt
     @Entity(tableName = "memos")
@@ -84,7 +84,7 @@ app/src/main/java/com/example/voicenotea/data/
 SOURCE CODE - DOMAIN LAYER (2 files)
 ================================================================================
 
-app/src/main/java/com/example/voicenotea/domain/
+app/src/main/java/jp/voicenotea/app/domain/
 
   AudioRecorder.kt
     class AudioRecorder(context: Context) {
@@ -108,7 +108,7 @@ app/src/main/java/com/example/voicenotea/domain/
 SOURCE CODE - UI LAYER (7 files)
 ================================================================================
 
-app/src/main/java/com/example/voicenotea/
+app/src/main/java/jp/voicenotea/app/
 
   MainActivity.kt
     - Single activity with Compose
@@ -169,14 +169,14 @@ app/src/main/java/com/example/voicenotea/
 SOURCE CODE - TEST (2 files)
 ================================================================================
 
-app/src/test/java/com/example/voicenotea/data/
+app/src/test/java/jp/voicenotea/app/data/
 
   MemoRepositoryTest.kt
     Unit tests with MockK
     Tests: insert, update, delete, get operations
     Uses runTest for coroutine testing
 
-app/src/androidTest/java/com/example/voicenotea/ui/
+app/src/androidTest/java/jp/voicenotea/app/ui/
 
   MemoListScreenTest.kt
     UI test example with ComposeTestRule

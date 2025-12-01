@@ -164,7 +164,7 @@ User taps Back to return to list
 
 ## To Integrate Real Transcription
 
-1. Open `app/src/main/java/com/example/voicenotea/domain/TranscriptionService.kt`
+1. Open `app/src/main/java/jp/voicenotea/app/domain/TranscriptionService.kt`
 2. Find the `TODO` comment in `FakeTranscriptionService`
 3. Replace the `suspend fun transcribeAudio()` implementation with:
 

@@ -25,7 +25,7 @@ voicenotea/
     │
     ├── src/main/
     │   ├── AndroidManifest.xml        (Permissions, activity declaration)
-    │   ├── java/com/example/voicenotea/
+    │   ├── java/jp/voicenotea/app/
     │   │   ├── MainActivity.kt        (Single activity, permission handling, nav host)
     │   │   │
     │   │   ├── data/                  (Data layer - Room & Repository)
@@ -56,12 +56,12 @@ voicenotea/
     │           └── data_extraction_rules.xml
     │
     ├── src/test/
-    │   └── java/com/example/voicenotea/
+    │   └── java/jp/voicenotea/app/
     │       └── data/
     │           └── MemoRepositoryTest.kt (Unit tests)
     │
     └── src/androidTest/
-        └── java/com/example/voicenotea/
+        └── java/jp/voicenotea/app/
             └── ui/
                 └── MemoListScreenTest.kt (UI tests)
 ```

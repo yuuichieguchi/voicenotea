@@ -21,7 +21,7 @@ voicenotea/
 ├── app/
 │   ├── src/main/
 │   │   ├── AndroidManifest.xml
-│   │   ├── java/com/example/voicenotea/
+│   │   ├── java/jp/voicenotea/app/
 │   │   │   ├── MainActivity.kt
 │   │   │   ├── data/
 │   │   │   │   ├── Memo.kt                 (Room entity)

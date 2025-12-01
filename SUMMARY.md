@@ -244,7 +244,7 @@ voicenotea/
     │
     ├── src/main/
     │   ├── AndroidManifest.xml         (Permissions: RECORD_AUDIO)
-    │   ├── java/com/example/voicenotea/
+    │   ├── java/jp/voicenotea/app/
     │   │   ├── MainActivity.kt         (Single activity + Navigation)
     │   │   ├── data/                   (Memo, DAO, Database, Repository)
     │   │   ├── domain/                 (AudioRecorder, TranscriptionService)
