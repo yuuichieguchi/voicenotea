@@ -96,8 +96,6 @@ fun MemoListScreen(
                         }
                     }
                 )
-            } else {
-                TopAppBar(title = { Text(stringResource(R.string.app_name)) })
             }
         },
         floatingActionButton = {

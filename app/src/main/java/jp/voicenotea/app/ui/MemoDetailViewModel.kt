@@ -45,6 +45,10 @@ class MemoDetailViewModel(context: Context) : ViewModel() {
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
 
     fun loadMemo(memoId: Long) {
+        // 新しいメモを読み込む時に前のメッセージをクリア
+        _successMessage.value = null
+        _errorMessage.value = null
+
         viewModelScope.launch {
             try {
                 val loadedMemo = repository.getMemoById(memoId)
