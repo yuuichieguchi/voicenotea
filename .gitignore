@@ -29,6 +29,7 @@ Thumbs.db
 *.jks
 *.p12
 *.pfx
+app/keystore.properties
 
 # Gradle build output
 *.apk

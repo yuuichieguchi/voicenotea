@@ -35,6 +35,7 @@ class MemoListViewModelFactory(private val context: Context) : ViewModelProvider
 class MemoListViewModel(context: Context) : ViewModel() {
     private val database = MemoDatabase.getDatabase(context)
     private val repository = MemoRepositoryImpl(database.memoDao())
+    private var shouldSaveOnNextFinal = false
 
     private val _continuousListeningEnabled = MutableStateFlow(false)
     private val _fullText = MutableStateFlow("")
@@ -71,15 +72,16 @@ class MemoListViewModel(context: Context) : ViewModel() {
         _recordingState.value = RecordingState.Listening
         _continuousListeningEnabled.value = true
         _fullText.value = ""
+        shouldSaveOnNextFinal = false
         speechRecognizerManager.startListening(language = Locale.JAPAN)
     }
 
     fun stopListening() {
         Log.d(TAG, "stopListening called")
         _continuousListeningEnabled.value = false
+        shouldSaveOnNextFinal = true
         speechRecognizerManager.stopListening()
         _recordingState.value = RecordingState.Idle
-        saveMemoFromTranscript(_fullText.value)
     }
 
     fun cancelListening() {
@@ -88,6 +90,7 @@ class MemoListViewModel(context: Context) : ViewModel() {
         speechRecognizerManager.cancel()
         _recordingState.value = RecordingState.Idle
         _fullText.value = ""
+        shouldSaveOnNextFinal = false
     }
 
     private fun onPartialText(text: String) {
@@ -106,13 +109,26 @@ class MemoListViewModel(context: Context) : ViewModel() {
             _fullText.value + "\n" + text
         }
         Log.d(TAG, "Updated fullText: ${_fullText.value}")
+
+        if (shouldSaveOnNextFinal && !_continuousListeningEnabled.value) {
+            shouldSaveOnNextFinal = false
+            saveMemoFromTranscript(_fullText.value)
+            _fullText.value = ""
+        }
     }
 
     private fun onError(message: String) {
         Log.e(TAG, "onError: $message")
         // 連続リスニングが有効な場合は、エラーが発生しても実行中のままにする
         // 自動再開はSpeechRecognizerManager側で処理される
-        if (!_continuousListeningEnabled.value) {
+        val isPermissionError = message.contains("許可", ignoreCase = true) ||
+            message.contains("permission", ignoreCase = true)
+
+        if (isPermissionError) {
+            _continuousListeningEnabled.value = false
+            shouldSaveOnNextFinal = false
+            _recordingState.value = RecordingState.Idle
+        } else if (!_continuousListeningEnabled.value) {
             _recordingState.value = RecordingState.Idle
         }
     }

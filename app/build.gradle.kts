@@ -4,6 +4,17 @@ plugins {
     id("kotlin-kapt")
 }
 
+import java.util.Properties
+
+val keystoreProperties = Properties().apply {
+    val propsFile = rootProject.file("app/keystore.properties")
+    if (propsFile.exists()) {
+        propsFile.inputStream().use { load(it) }
+    }
+}
+
+val hasReleaseSigning = keystoreProperties.isNotEmpty()
+
 android {
     namespace = "jp.voicenotea.app"
     compileSdk = 35
@@ -22,11 +33,13 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            keyAlias = "voicenotea_key"
-            keyPassword = "REDACTED"
-            storeFile = file(System.getProperty("user.home") + "/.android/voicenotea_release.keystore")
-            storePassword = "REDACTED"
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
+                storePassword = keystoreProperties["storePassword"] as String?
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+            }
         }
     }
 
@@ -34,7 +47,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {
