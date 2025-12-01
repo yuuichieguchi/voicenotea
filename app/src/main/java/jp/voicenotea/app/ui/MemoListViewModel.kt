@@ -35,7 +35,6 @@ class MemoListViewModelFactory(private val context: Context) : ViewModelProvider
 class MemoListViewModel(context: Context) : ViewModel() {
     private val database = MemoDatabase.getDatabase(context)
     private val repository = MemoRepositoryImpl(database.memoDao())
-    private var shouldSaveOnNextFinal = false
 
     private val _continuousListeningEnabled = MutableStateFlow(false)
     private val _fullText = MutableStateFlow("")
@@ -67,70 +66,92 @@ class MemoListViewModel(context: Context) : ViewModel() {
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
 
+    init {
+        // SessionEvent を監視して UI 状態を更新
+        viewModelScope.launch {
+            speechRecognizerManager.sessionEvents.collect { event ->
+                when (event) {
+                    is jp.voicenotea.app.domain.SessionEvent.SessionStarted -> {
+                        Log.d(TAG, "SessionStarted event received")
+                        _recordingState.value = RecordingState.Listening
+                        _fullText.value = ""
+                    }
+
+                    is jp.voicenotea.app.domain.SessionEvent.PartialResult -> {
+                        Log.d(TAG, "PartialResult event: ${event.text.take(20)}")
+                        // UI のリアルタイム表示用（保存はしない）
+                    }
+
+                    is jp.voicenotea.app.domain.SessionEvent.FinalResult -> {
+                        Log.d(TAG, "FinalResult event: ${event.text}")
+                        _fullText.value = event.text
+                    }
+
+                    is jp.voicenotea.app.domain.SessionEvent.SessionCompleted -> {
+                        Log.d(TAG, "SessionCompleted event: ${event.finalText.take(30)}")
+                        // メモを保存
+                        saveMemoFromTranscript(event.finalText)
+                        _fullText.value = ""
+                        _recordingState.value = RecordingState.Idle
+                    }
+
+                    is jp.voicenotea.app.domain.SessionEvent.SessionCancelled -> {
+                        Log.d(TAG, "SessionCancelled event")
+                        _fullText.value = ""
+                        _recordingState.value = RecordingState.Idle
+                    }
+
+                    is jp.voicenotea.app.domain.SessionEvent.SessionError -> {
+                        Log.e(TAG, "SessionError event: ${event.errorMessage}")
+                        val isPermissionError = event.errorMessage.contains("許可", ignoreCase = true) ||
+                            event.errorMessage.contains("permission", ignoreCase = true)
+                        if (isPermissionError) {
+                            _continuousListeningEnabled.value = false
+                        }
+                        if (!_continuousListeningEnabled.value) {
+                            _recordingState.value = RecordingState.Idle
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun startListening() {
         Log.d(TAG, "startListening called")
         _recordingState.value = RecordingState.Listening
         _continuousListeningEnabled.value = true
         _fullText.value = ""
-        shouldSaveOnNextFinal = false
         speechRecognizerManager.startListening(language = Locale.JAPAN)
     }
 
     fun stopListening() {
         Log.d(TAG, "stopListening called")
         _continuousListeningEnabled.value = false
-        shouldSaveOnNextFinal = true
         speechRecognizerManager.stopListening()
-        _recordingState.value = RecordingState.Idle
+        // SessionCompleted イベントで自動的に保存される
     }
 
     fun cancelListening() {
         Log.d(TAG, "cancelListening called")
         _continuousListeningEnabled.value = false
-        speechRecognizerManager.cancel()
-        _recordingState.value = RecordingState.Idle
+        speechRecognizerManager.cancelListening()
         _fullText.value = ""
-        shouldSaveOnNextFinal = false
     }
 
     private fun onPartialText(text: String) {
         Log.d(TAG, "onPartialText: $text")
-        // 部分的なテキストはUIに表示するが、保存はしない
+        // SessionEvent でハンドルされる
     }
 
     private fun onFinalText(text: String) {
         Log.d(TAG, "onFinalText: $text")
-        if (text.isBlank()) return
-
-        // 前回の結果と結合
-        _fullText.value = if (_fullText.value.isBlank()) {
-            text
-        } else {
-            _fullText.value + "\n" + text
-        }
-        Log.d(TAG, "Updated fullText: ${_fullText.value}")
-
-        if (shouldSaveOnNextFinal && !_continuousListeningEnabled.value) {
-            shouldSaveOnNextFinal = false
-            saveMemoFromTranscript(_fullText.value)
-            _fullText.value = ""
-        }
+        // SessionEvent でハンドルされる
     }
 
     private fun onError(message: String) {
         Log.e(TAG, "onError: $message")
-        // 連続リスニングが有効な場合は、エラーが発生しても実行中のままにする
-        // 自動再開はSpeechRecognizerManager側で処理される
-        val isPermissionError = message.contains("許可", ignoreCase = true) ||
-            message.contains("permission", ignoreCase = true)
-
-        if (isPermissionError) {
-            _continuousListeningEnabled.value = false
-            shouldSaveOnNextFinal = false
-            _recordingState.value = RecordingState.Idle
-        } else if (!_continuousListeningEnabled.value) {
-            _recordingState.value = RecordingState.Idle
-        }
+        // SessionEvent でハンドルされる
     }
 
     private fun saveMemoFromTranscript(transcript: String) {

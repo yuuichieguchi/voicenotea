@@ -68,8 +68,10 @@ fun VoicenotaApp(activity: MainActivity) {
             )
         ) { backStackEntry ->
             val memoId = backStackEntry.arguments?.getLong("memoId") ?: 0L
+            // 各メモごとに独立した ViewModel インスタンスを保持するキーを使用
+            val viewModelKey = "MemoDetailViewModel_$memoId"
             val factory = MemoDetailViewModelFactory(activity)
-            val memoDetailViewModel = ViewModelProvider(activity, factory).get(MemoDetailViewModel::class.java)
+            val memoDetailViewModel = ViewModelProvider(activity, factory).get(viewModelKey, MemoDetailViewModel::class.java)
 
             MemoDetailScreen(
                 viewModel = memoDetailViewModel,
