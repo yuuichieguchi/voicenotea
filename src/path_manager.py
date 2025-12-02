@@ -98,19 +98,27 @@ class PathManager:
             >>> pm = PathManager()
             >>> pm.validate_writable(Path("/tmp/output"))
         """
+        import uuid
+
+        check_path = path
+
         if path.exists():
             if not path.is_dir():
                 raise PathError(f"Path exists but is not a directory: {path}")
-            if not path.is_file() and not path.is_dir():
-                raise PathError(f"Path type not supported: {path}")
         else:
+            # For non-existent paths, check parent directory exists
             parent = path.parent
             if not parent.exists():
                 raise PathError(f"Parent directory does not exist: {parent}")
+            check_path = parent
 
-        if path.exists() and not path.is_file():
-            if not (path / "test_write").parent.is_dir():
-                raise PathError(f"No write permission for: {path}")
+        # Test actual write permission by attempting to create and delete a test file
+        try:
+            test_file = check_path / f".write_test_{uuid.uuid4()}"
+            test_file.touch()
+            test_file.unlink()
+        except (OSError, PermissionError, IOError) as e:
+            raise PathError(f"No write permission for: {check_path}") from e
 
     def validate_input_dir(self, input_dir: str) -> Path:
         """Resolve and validate input directory is readable.

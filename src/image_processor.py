@@ -50,10 +50,8 @@ class ImageProcessor:
                 return img.copy()
         except FileNotFoundError as e:
             raise ProcessingError(f"Cannot find image file: {input_path}") from e
-        except (IOError, OSError) as e:
+        except (IOError, OSError, ValueError) as e:
             raise ProcessingError(f"Corrupted or invalid image file {input_path}: {e}") from e
-        except Exception as e:
-            raise ProcessingError(f"Failed to open image {input_path}: {e}") from e
 
     @staticmethod
     def validate_image(img: Image.Image, min_width: int = 100) -> ImageDimensions:
@@ -75,7 +73,7 @@ class ImageProcessor:
         """
         try:
             width, height = img.size
-        except Exception as e:
+        except (AttributeError, TypeError) as e:
             raise ProcessingError(f"Cannot determine image size: {e}") from e
 
         if width < min_width or height < min_width:
@@ -121,7 +119,7 @@ class ImageProcessor:
                 tablet_preset.height,
             )
             return scaled.width, scaled.height
-        except Exception as e:
+        except (ValueError, ZeroDivisionError) as e:
             raise ProcessingError(f"Failed to calculate scaled dimensions: {e}") from e
 
     @staticmethod
@@ -192,7 +190,7 @@ class ImageProcessor:
 
             tablet_img.paste(resized_img, (x_offset, y_offset))
             return tablet_img
-        except Exception as e:
+        except (ValueError, TypeError, MemoryError) as e:
             raise ProcessingError(f"Failed to create padded image: {e}") from e
 
     @staticmethod

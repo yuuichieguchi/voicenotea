@@ -5,7 +5,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.config import ConfigError
+from src.logger import PathError, ProcessingError
 from src.main import main, merge_configs, parse_arguments
+from src.models import ProcessingResult
 
 
 class TestArgumentParsing:
@@ -134,35 +137,151 @@ class TestMainFunction:
 
     def test_should_return_zero_on_success(self):
         """Test main returns 0 on success."""
-        with patch.object(sys, 'argv', ['prog', '--help']):
-            with patch('src.main.ScreenshotGenerator') as mock_gen:
-                mock_instance = MagicMock()
-                mock_instance.validate_setup.return_value = True
-                mock_instance.process_directory.return_value = []
-                mock_gen.return_value = mock_instance
+        with patch.object(sys, 'argv', ['prog', '--input', '/tmp/input', '--output', '/tmp/output']):
+            with patch('src.main.ConfigManager') as mock_config_mgr:
+                with patch('src.main.ScreenshotGenerator') as mock_gen:
+                    # Setup ConfigManager mock
+                    mock_config = MagicMock()
+                    mock_config.validate_config.return_value = None
+                    mock_config.to_dict.return_value = {
+                        'tablet': {'size': '7inch'},
+                        'paths': {'input_dir': '/tmp/input', 'output_dir': '/tmp/output'},
+                        'processing': {'jpeg_quality': 95},
+                        'logging': {'level': 'INFO'}
+                    }
+                    mock_config_mgr.return_value = mock_config
 
-    def test_should_handle_missing_paths(self):
-        """Test handling missing required paths."""
-        with patch.object(sys, 'argv', ['prog']):
-            # Would need proper config setup to test fully
-            pass
+                    # Setup ScreenshotGenerator mock
+                    mock_instance = MagicMock()
+                    mock_instance.validate_setup.return_value = True
+                    mock_instance.process_directory.return_value = [
+                        ProcessingResult(
+                            input_file="test.jpg",
+                            output_file="test_out.jpg",
+                            success=True,
+                            file_size_mb=0.5,
+                            scaled_dimensions=(920, 1920),
+                        )
+                    ]
+                    mock_instance.print_summary.return_value = 0
+                    mock_gen.return_value = mock_instance
+
+                    # ACT
+                    result = main()
+
+                    # ASSERT
+                    assert result == 0
+                    mock_instance.validate_setup.assert_called_once()
+                    mock_instance.process_directory.assert_called_once()
+                    mock_instance.print_summary.assert_called_once()
+
+    def test_should_return_one_on_partial_failure(self):
+        """Test main returns 1 when some images fail."""
+        with patch.object(sys, 'argv', ['prog', '--input', '/tmp/input', '--output', '/tmp/output']):
+            with patch('src.main.ConfigManager') as mock_config_mgr:
+                with patch('src.main.ScreenshotGenerator') as mock_gen:
+                    # Setup ConfigManager mock
+                    mock_config = MagicMock()
+                    mock_config.validate_config.return_value = None
+                    mock_config.to_dict.return_value = {
+                        'tablet': {'size': '7inch'},
+                        'paths': {'input_dir': '/tmp/input', 'output_dir': '/tmp/output'},
+                        'processing': {'jpeg_quality': 95},
+                        'logging': {'level': 'INFO'}
+                    }
+                    mock_config_mgr.return_value = mock_config
+
+                    # Setup ScreenshotGenerator mock with one failure
+                    mock_instance = MagicMock()
+                    mock_instance.validate_setup.return_value = True
+                    mock_instance.process_directory.return_value = [
+                        ProcessingResult(
+                            input_file="test1.jpg",
+                            output_file="test1_out.jpg",
+                            success=True,
+                            file_size_mb=0.5,
+                            scaled_dimensions=(920, 1920),
+                        ),
+                        ProcessingResult(
+                            input_file="test2.jpg",
+                            output_file="test2_out.jpg",
+                            success=False,
+                            error="File corrupted",
+                        )
+                    ]
+                    mock_instance.print_summary.return_value = 1
+                    mock_gen.return_value = mock_instance
+
+                    # ACT
+                    result = main()
+
+                    # ASSERT
+                    assert result == 1
 
     def test_should_catch_config_error(self):
         """Test catching configuration errors."""
-        # Test would require mocking ConfigManager to raise ConfigError
-        pass
+        with patch.object(sys, 'argv', ['prog', '--input', '/tmp/input', '--output', '/tmp/output']):
+            with patch('src.main.ConfigManager') as mock_config_mgr:
+                # Setup ConfigManager to raise ConfigError during initialization
+                mock_config_mgr.side_effect = ConfigError("Invalid configuration")
+
+                # ACT
+                result = main()
+
+                # ASSERT
+                assert result == 1  # ConfigError exit code
 
     def test_should_catch_path_error(self):
         """Test catching path-related errors."""
-        # Test would require mocking PathManager to raise PathError
-        pass
+        with patch.object(sys, 'argv', ['prog', '--input', '/tmp/input', '--output', '/tmp/output']):
+            with patch('src.main.ConfigManager') as mock_config_mgr:
+                with patch('src.main.ScreenshotGenerator') as mock_gen:
+                    # Setup ConfigManager mock
+                    mock_config = MagicMock()
+                    mock_config.validate_config.return_value = None
+                    mock_config.to_dict.return_value = {
+                        'tablet': {'size': '7inch'},
+                        'paths': {'input_dir': '/nonexistent', 'output_dir': '/tmp/output'},
+                        'processing': {'jpeg_quality': 95},
+                        'logging': {'level': 'INFO'}
+                    }
+                    mock_config_mgr.return_value = mock_config
+
+                    # Setup ScreenshotGenerator to raise PathError
+                    mock_gen.return_value.validate_setup.side_effect = PathError(
+                        "Input directory not found"
+                    )
+
+                    # ACT
+                    result = main()
+
+                    # ASSERT
+                    assert result == 2  # PathError exit code
 
     def test_should_catch_processing_error(self):
         """Test catching processing errors."""
-        # Test would require mocking ImageProcessor to raise ProcessingError
-        pass
+        with patch.object(sys, 'argv', ['prog', '--input', '/tmp/input', '--output', '/tmp/output']):
+            with patch('src.main.ConfigManager') as mock_config_mgr:
+                with patch('src.main.ScreenshotGenerator') as mock_gen:
+                    # Setup ConfigManager mock
+                    mock_config = MagicMock()
+                    mock_config.validate_config.return_value = None
+                    mock_config.to_dict.return_value = {
+                        'tablet': {'size': '7inch'},
+                        'paths': {'input_dir': '/tmp/input', 'output_dir': '/tmp/output'},
+                        'processing': {'jpeg_quality': 95},
+                        'logging': {'level': 'INFO'}
+                    }
+                    mock_config_mgr.return_value = mock_config
 
-    def test_should_return_appropriate_exit_codes(self):
-        """Test exit codes based on error types."""
-        # Tests for different error scenarios and their exit codes
-        pass
+                    # Setup ScreenshotGenerator to raise ProcessingError
+                    mock_gen.return_value.validate_setup.return_value = True
+                    mock_gen.return_value.process_directory.side_effect = ProcessingError(
+                        "Image processing failed"
+                    )
+
+                    # ACT
+                    result = main()
+
+                    # ASSERT
+                    assert result == 3  # ProcessingError exit code
